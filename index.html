@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Spaceman Crash Predictor</title>
+  <style>
+    body {
+      background: #0d0d0d;
+      color: #00ffcc;
+      font-family: 'Courier New', monospace;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      margin: 0;
+      text-align: center;
+    }
+    h1 {
+      font-size: 2em;
+    }
+    #log {
+      margin-top: 20px;
+      max-width: 90vw;
+      max-height: 60vh;
+      overflow: auto;
+      background: #111;
+      border: 1px solid #00ffcc;
+      padding: 10px;
+      border-radius: 10px;
+      white-space: pre-wrap;
+    }
+  </style>
+</head>
+<body>
+  <h1>🚀 Spaceman Crash Predictor</h1>
+  <div id="log">Waiting for data...</div>
+
+  <script>
+    const log = document.getElementById('log');
+    const originalWebSocket = window.WebSocket;
+    const messages = [];
+
+    window.WebSocket = function (url, protocols) {
+      const ws = new originalWebSocket(url, protocols);
+
+      ws.addEventListener('message', (event) => {
+        try {
+          const data = event.data;
+          if (data.startsWith('{') || data.startsWith('[')) {
+            const parsed = JSON.parse(data);
+            const str = JSON.stringify(parsed).toLowerCase();
+            if (str.includes('multiplier') || str.includes('crash') || str.includes('result')) {
+              const entry = JSON.stringify(parsed, null, 2);
+              messages.push(entry);
+              if (messages.length > 20) messages.shift();
+              log.textContent = messages.join('\n\n----------------------\n\n');
+            }
+          }
+        } catch (e) {
+          // ignore
+        }
+      });
+      return ws;
+    };
+    window.WebSocket.prototype = originalWebSocket.prototype;
+  </script>
+</body>
+</html>
